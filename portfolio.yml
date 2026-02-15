@@ -1,0 +1,12 @@
+investments:
+- isin: IT0005449969
+  nominal_value: 11000.0
+- isin: XS2181689659
+  nominal_value: 12000.0
+- isin: XS2330514899
+  nominal_value: 14000.0
+- isin: XS1508566558
+  nominal_value: 14000.0
+ladder_conditions:
+  strategy: max_earnings
+  capital_invested: 39615.7

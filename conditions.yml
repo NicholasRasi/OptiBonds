@@ -1,0 +1,19 @@
+ladder_size: 4
+step_size: 5
+step_width: 1
+date_tolerance_days_start: 3650
+date_tolerance_days_end: 365
+years_offset: 0
+months_offset: 0
+capital_invested: [10000, 10000, 10000, 10000]
+strategy: "max_earnings" # Options: max_earnings, max_ytm, max_return
+min_rating: "BBB-"
+currencies: ["EUR"]
+max_duplicated_issuers: 1
+include_issuer_codes: null
+exclude_issuer_codes: null #["GOV_RO"]
+include_isins: null
+exclude_isins:  null #["XS3200176298", "XS2908645265"]
+max_last_price: 100
+min_coupon_rate: null
+min_volume_rating: 1
