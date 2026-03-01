@@ -1,16 +1,13 @@
 from tabulate import tabulate
-from datetime import date
-from optibonds.cash_flows import bond_cash_flows
 from optibonds.models import BondSimple, LadderConditions
 from optibonds.utils import (
     compute_bonds_capital_gain,
     compute_bonds_coupons,
     compute_mean_weighted_maturity,
-    compute_net_value,
     compute_total_gain_yield,
     compute_total_simple_yield,
-    get_compounding_earnings,
-    portfolio_irr
+    portfolio_cash_flows,
+    portfolio_irr,
 )
 
 
@@ -127,7 +124,6 @@ def print_portfolio_report(
         ladder_strategy = ladder_conditions.strategy.value
 
     capital_invested = sum(bond.capital_invested for bond in bonds)
-    net_compounding_earning = get_compounding_earnings(bonds)
 
     mean_weighted_duration = compute_mean_weighted_maturity(bonds, capital_invested)
     irr_portfolio = portfolio_irr(bonds)
@@ -141,9 +137,8 @@ def print_portfolio_report(
         ["Number of bonds", len(bonds)],
         ["Target capital invested", money(target_capital_invested)],
         ["Total capital invested", money(capital_invested)],
-        ["Net compounding earnings", money(net_compounding_earning)],
         ["Mean weighted duration (years)", years(mean_weighted_duration)],
-        ["Portfolio IRR", pct(irr_portfolio)],
+        ["Portfolio IRR (net)", pct(irr_portfolio)],
         ["Strategy", ladder_strategy],
     ]
 
@@ -181,11 +176,11 @@ def print_portfolio_report(
                 continue
 
             step_capital_invested = sum(bond.capital_invested for bond in bonds_step)
-            step_coupons_gross = compute_bonds_coupons(bonds_step)
-            step_coupons_net = compute_net_value(step_coupons_gross)
+            step_coupons_gross = compute_bonds_coupons(bonds_step, net=False)
+            step_coupons_net = compute_bonds_coupons(bonds_step, net=True)
 
-            step_capital_gain_gross = compute_bonds_capital_gain(bonds_step)
-            step_capital_gain_net = compute_net_value(step_capital_gain_gross)
+            step_capital_gain_gross = compute_bonds_capital_gain(bonds_step, net=False)
+            step_capital_gain_net = compute_bonds_capital_gain(bonds_step, net=True)
 
             coupon_rates = ", ".join(
                 f"{bond.current_coupon_rate * 100:.2f}%" for bond in bonds_step
@@ -252,13 +247,14 @@ def print_portfolio_report(
     total_coupons_net = 0.0
     total_capital_gains_gross = 0.0
     total_capital_gains_net = 0.0
+    total_nominal = 0.0
 
     for i, bond in enumerate(bonds):
-        coupons_gross = compute_bonds_coupons([bond])
-        coupons_net = compute_net_value(coupons_gross)
+        coupons_gross = compute_bonds_coupons([bond], net=False)
+        coupons_net = compute_bonds_coupons([bond], net=True)
 
-        capital_gain_gross = compute_bonds_capital_gain([bond])
-        capital_gain_net = compute_net_value(capital_gain_gross)
+        capital_gain_gross = compute_bonds_capital_gain([bond], net=False)
+        capital_gain_net = compute_bonds_capital_gain([bond], net=True)
 
         net_ytm = bond.net_yield/100
 
@@ -266,6 +262,7 @@ def print_portfolio_report(
             bond.isin,
             bond.issuer,
             bond.rating,
+            pct(bond.taxation),
             bond.volume_rating,
             years(bond.maturity_years),
             bond.settlement_price,
@@ -278,10 +275,20 @@ def print_portfolio_report(
             money(coupons_net),
             money(capital_gain_gross),
             money(capital_gain_net),
+            money(coupons_net + capital_gain_net),
+            pct(
+                compute_total_simple_yield(
+                    coupons_net,
+                    capital_gain_net,
+                    bond.capital_invested,
+                    bond.maturity_years,
+                )
+            ),
         ])
 
         total_capital_invested += bond.capital_invested
         total_num_lots += bond.num_lots
+        total_nominal += bond.num_lots * bond.minimum_lot
         total_coupons_gross += coupons_gross
         total_coupons_net += coupons_net
         total_capital_gains_gross += capital_gain_gross
@@ -290,6 +297,7 @@ def print_portfolio_report(
     # ---- TOTAL ROW ----
     bond_rows.append([
         "TOTAL",
+        "",
         "",
         "",
         "",
@@ -304,6 +312,7 @@ def print_portfolio_report(
         money(total_coupons_net),
         money(total_capital_gains_gross),
         money(total_capital_gains_net),
+        money(total_coupons_net + total_capital_gains_net),
     ])
 
     print(tabulate(
@@ -312,10 +321,11 @@ def print_portfolio_report(
             "ISIN",
             "Issuer",
             "Rating",
+            "Tax",
             "VR",
             "Duration",
             "Price",
-            "Capital Invested",
+            "Capital",
             "Lots",
             "Nominal",
             "Net YTM",
@@ -323,7 +333,9 @@ def print_portfolio_report(
             "Coupons G",
             "Coupons N",
             "Capital Gain G",
-            "N",
+            "Capital Gain N",
+            "Return N",
+            "Simple Yield N",
         ],
         tablefmt="github",
     ))
@@ -435,21 +447,12 @@ def print_bond_vertical(bond_df):
 
 
 def print_portfolio_cash_flows(bonds: list[BondSimple]):
-    section("CASH FLOWS")
-    settlement_date = date.today()
-    all_cashflows = []
-
-    for bond in bonds:
-        all_cashflows.extend(
-            bond_cash_flows(bond, settlement_date)
-        )
-
-    # Sort by date
-    all_cashflows.sort(key=lambda x: x[0])
+    section("CASH FLOWS (NET)")
+    all_cashflows = portfolio_cash_flows(bonds)
 
     table = [
-        [cf_date.isoformat(), f"{amount:,.2f}", desc]
-        for cf_date, amount, desc in all_cashflows
+        [cf.date.isoformat(), f"{cf.amount:,.2f}", cf.description]
+        for cf in all_cashflows
     ]
 
     print(tabulate(

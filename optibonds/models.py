@@ -1,4 +1,5 @@
 # Models
+from datetime import date
 from enum import Enum
 import yaml
 from typing import Self
@@ -118,3 +119,10 @@ class PortfolioConditions:
             config = yaml.safe_load(f)
 
         return cls(**config)
+
+
+class CashFlow:
+    def __init__(self, date: date, amount: float, description: str):
+        self.date = date
+        self.amount = amount
+        self.description = description

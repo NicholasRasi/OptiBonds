@@ -1,6 +1,7 @@
 import math
-import numpy_financial as npf
-from optibonds.models import BondSimple
+from datetime import date, timedelta
+from optibonds.models import BondSimple, CashFlow
+from scipy.optimize import newton
 
 
 def compute_permutations_bonds(matrix: list[list[BondSimple]], max_duplicated_issuers: int = 1) -> list[list[BondSimple]]:
@@ -27,24 +28,18 @@ def compute_permutations_bonds(matrix: list[list[BondSimple]], max_duplicated_is
     backtrack(0, [], {})
     return result
 
-
-def get_compounding_earning(bond: BondSimple) -> float:
-    # compute the final value of the bond investment
-    bond_earning = bond.capital_invested * bond.ncif  # ncif = (1 + bond.net_yield / 100)**bond.maturity_years
-    return bond_earning
-
-
 def get_compounding_earnings(bonds: list[BondSimple]) -> float:
-    total_bonds_earning = sum(get_compounding_earning(bond) for bond in bonds)
+    total_bonds_earning = 0.0
+    for bond in bonds:
+        bond_earning = bond.capital_invested * bond.ncif  # ncif = (1 + bond.net_yield / 100)**bond.maturity_years
+        total_bonds_earning += bond_earning
     return total_bonds_earning
 
-
-def get_annualized_earning(bond: BondSimple) -> float:
-    return bond.capital_invested * (bond.net_yield / 100)
-
-
 def get_annualized_earnings(bonds: list[BondSimple]) -> float:
-    total_annualized_earnings = sum(get_annualized_earning(bond) for bond in bonds)
+    total_annualized_earnings = 0.0
+    for bond in bonds:
+        total_bonds_earning = bond.capital_invested * (bond.net_yield / 100)
+        total_annualized_earnings += total_bonds_earning
     return total_annualized_earnings
 
 def get_total_return(bonds: list[BondSimple], net: bool = True) -> float:
@@ -55,6 +50,11 @@ def get_total_return(bonds: list[BondSimple], net: bool = True) -> float:
             bond_return = compute_net_value(bond_return, bond.taxation)
         total_return += bond_return
     return total_return
+
+def get_ytms(bonds: list[BondSimple]) -> float:
+    return sum(bond.net_yield for bond in bonds)
+
+def allocate_capital_to_bond(bond: BondSimple, capital_invested: float) -> BondSimple:
     # compute the max number of lots that can be purchased with the capital invested
     num_lots = math.floor(capital_invested / (bond.minimum_lot * bond.settlement_price / 100))
     capital = num_lots * bond.minimum_lot * bond.settlement_price / 100
@@ -62,30 +62,10 @@ def get_total_return(bonds: list[BondSimple], net: bool = True) -> float:
     bond.num_lots = num_lots
     return bond
 
-
-def allocate_capital_to_bonds(
-        bonds: list[BondSimple],
-        capital_invested: list[float]) -> list[BondSimple]:
+def allocate_capital_to_bonds(bonds: list[BondSimple], capital_invested: list[float]) -> list[BondSimple]:
     for i, bond in enumerate(bonds):
         bonds[i] = allocate_capital_to_bond(bond, capital_invested[i])
     return bonds
-
-
-# def compute_total_get_compounding_earning_with_ci(
-#         bonds: list[BondSimple],
-#         total_capital_invested: float) -> float:
-#     bond_earnings = []
-#     for i, bond in enumerate(bonds):
-#         capital = bond.capital_invested
-
-#         # compute the final value of the bond investment
-#         bond_earning = capital * bond.ncif  # ncif = (1 + bond.net_yield / 100)**bond.maturity_years
-#         bond_earnings.append(bond_earning)
-
-#     total_bonds_earning = sum(bond_earnings)
-#     total_yield = (total_bonds_earning / total_capital_invested) - 1
-#     return total_yield
-
 
 def compute_mean_weighted_maturity(
         bonds: list[BondSimple],
@@ -95,17 +75,6 @@ def compute_mean_weighted_maturity(
         weight = bond.capital_invested / total_capital_invested
         mean_weighted_maturity += weight * bond.maturity_years
     return mean_weighted_maturity
-
-
-# def get_approximated_annualized_compounded_yield(
-#         bonds: list[BondSimple],
-#         total_capital_invested: float) -> float:
-#     mean_weighted_maturity = compute_mean_weighted_maturity(bonds, total_capital_invested)
-#     total_earning = get_compounding_earnings(bonds)
-
-#     annualized_yield = (total_earning/total_capital_invested)**(1 / mean_weighted_maturity) - 1
-#     return annualized_yield
-
 
 def compute_approximated_bonds_yield(
         bonds: list[BondSimple],
@@ -145,7 +114,6 @@ def compute_total_gain_yield(
     total_yield = ((total_capital_invested + total_coupons + total_capital_gain) / total_capital_invested) - 1
     return total_yield
 
-
 def compute_total_simple_yield(
         total_coupons: float,
         total_capital_gain: float,
@@ -155,27 +123,9 @@ def compute_total_simple_yield(
                                            total_capital_invested) / mean_weighted_maturity
     return total_yield
 
-
-def compute_net_value(value: float) -> float:
-    tax_rate = 0.125
-    net_value = value * (1 - tax_rate)
+def compute_net_value(value: float, taxation: float) -> float:
+    net_value = value * (1 - taxation)
     return net_value
-
-
-def bond_cashflows(bond: BondSimple):
-    flows = []
-
-    flows.append(-bond.capital_invested)
-    nominal = bond.capital_invested / (bond.settlement_price / 100)
-    coupon_net = nominal * bond.current_coupon_rate * (1 - 0.125)
-
-    years = int(round(bond.maturity_years))
-    for _ in range(1, years):
-        flows.append(coupon_net)
-
-    flows.append(coupon_net + nominal)
-    return flows
-
 
 def portfolio_cashflows(bonds):
     portfolio = []
@@ -191,8 +141,91 @@ def portfolio_cashflows(bonds):
 
     return portfolio
 
+def portfolio_cash_flows(bonds: list[BondSimple]) -> list[CashFlow]:
+    settlement_date = date.today()
+    all_cashflows = []
 
-def portfolio_irr(bonds):
-    cashflows = portfolio_cashflows(bonds)
-    irr = npf.irr(cashflows)
-    return irr
+    for bond in bonds:
+        all_cashflows.extend(
+            bond_cash_flows(bond, settlement_date)
+        )
+
+    # Sort by date
+    all_cashflows.sort(key=lambda x: x.date)
+
+    return all_cashflows
+
+def portfolio_irr(bonds: list[BondSimple]) -> float:
+    all_cashflows = portfolio_cash_flows(bonds)
+    portfolio_irr = xirr(all_cashflows)
+    return portfolio_irr
+
+def xirr(cashflows: list[CashFlow]):
+    """
+    cashflows: list of (date, amount, description)
+    returns annualized IRR
+    """
+    dates = [cf.date for cf in cashflows]
+    amounts = [cf.amount for cf in cashflows]
+
+    t0 = dates[0]
+
+    def npv(rate):
+        return sum(
+            amt / (1 + rate) ** ((d - t0).days / 365.25)
+            for d, amt in zip(dates, amounts)
+        )
+
+    return newton(npv, 0.05)
+
+def bond_cash_flows(bond: BondSimple, settlement_date: date) -> list[CashFlow]:
+    cashflows: list[CashFlow] = []
+
+    # Initial investment (outflow)
+    invested = bond.capital_invested
+    cashflows.append(CashFlow(
+        settlement_date,
+        -invested,
+        f"Buy {bond.isin}"
+    ))
+
+    # Number of coupon payments
+    num_coupons = math.floor(bond.maturity_years)
+
+    # annual_coupon = total_nominal * bond.current_coupon_rate
+    total_coupons = compute_bonds_coupons([bond], net=True)
+    coupons = total_coupons * (num_coupons / bond.maturity_years)
+    
+    if num_coupons > 0:
+        annual_coupon = coupons / num_coupons
+        last_coupon = total_coupons - coupons
+    else:
+        annual_coupon = 0.0
+        last_coupon = total_coupons
+
+    if annual_coupon > 0:
+        for i in range(1, num_coupons + 1):
+            coupon_date = settlement_date + timedelta(days=settlement_date.day + i * 365.25)
+            cashflows.append(CashFlow(
+                coupon_date,
+                annual_coupon,
+                f"Coupon {bond.isin}"
+            ))
+
+    # last coupon + capital gain at maturity
+    maturity_days = math.floor(settlement_date.day + bond.maturity_years * 365.25)
+    maturity_date = settlement_date + timedelta(days=maturity_days)
+    if last_coupon > 0:
+        cashflows.append(CashFlow(
+            maturity_date,
+            last_coupon,
+            f"Last Coupon {bond.isin}"
+        ))
+
+    cashflows.append(CashFlow(
+        maturity_date,
+        bond.capital_invested + compute_bonds_capital_gain([bond], net=True),
+        f"Capital Gain {bond.isin}"
+    ))
+
+    return cashflows
