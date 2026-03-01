@@ -39,6 +39,7 @@ class BondSimple:
 class LadderStrategy(Enum):
     MAX_EARNINGS = "max_earnings"
     MAX_YTM = "max_ytm"
+    MAX_YTM_CAPITAL = "max_ytm_capital"
     MAX_RETURN = "max_return"
 
 class LadderConditions:

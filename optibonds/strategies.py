@@ -5,12 +5,10 @@ from optibonds.utils import (
     allocate_capital_to_bonds,
     allocate_capital_to_bond,
     compute_permutations_bonds,
-    get_annualized_earning,
     get_annualized_earnings,
-    get_compounding_earning,
     get_compounding_earnings,
-    get_return,
-    get_total_return
+    get_total_return,
+    get_ytms
 )
 
 
@@ -64,11 +62,11 @@ def build_ladder_diversification(
         ladder = [[bond] for bond in ladder]
     else:
         ladder = [[] for _ in eligible_bonds]
-        strategy_func = select_strategy_function(ladder_conditions.strategy, lists=False)
+        strategy_func = select_strategy_function(ladder_conditions.strategy)
         # the diversification strategy is enabled on the ladder step
         for i, bonds in enumerate(filtered_eligible_bonds):
             # sort bonds by bond earning
-            bonds.sort(key=lambda b: strategy_func(b), reverse=True)
+            bonds.sort(key=lambda b: strategy_func([b]), reverse=True)
             # Take only the top 'step_width' bonds for each step
             ladder[i] = bonds[:ladder_conditions.step_width]
 
@@ -87,7 +85,7 @@ def select_best_ladder(
     print(f"Total permutations {total_permutations_num}, to evaluate: "
           f"{len(bonds_perm)} ({len(bonds_perm)/total_permutations_num*100:.2f}%)")
 
-    strategy_func = select_strategy_function(ladder_conditions.strategy, lists=True)
+    strategy_func = select_strategy_function(ladder_conditions.strategy)
 
     # evaluate each permutation and take the one with the highest total earnings
     max_metric = 0
@@ -112,7 +110,7 @@ def get_best_bond(
     max_bond_earning = 0.0
     best_bond: BondSimple | None = None
 
-    strategy_func = select_strategy_function(strategy, lists=False)
+    strategy_func = select_strategy_function(strategy)
 
     for bond in step_bonds.itertuples():
         simple_bond = BondSimple(
@@ -126,10 +124,11 @@ def get_best_bond(
             minimum_lot=bond.minimumlot,
             ncif=bond.ncif,
             volume_rating=bond.volumevalue,
-            rating=bond.ratingsp)
+            rating=bond.ratingsp,
+            taxation=bond.taxation)
 
         bond_allocated = allocate_capital_to_bond(simple_bond, capital_invested)
-        bond_metric = strategy_func(bond_allocated)
+        bond_metric = strategy_func([bond_allocated])
 
         if bond_metric > max_bond_earning:
             max_bond_earning = bond_metric
@@ -137,24 +136,14 @@ def get_best_bond(
     return best_bond
 
 
-def select_strategy_function(
-        strategy: LadderStrategy,
-        lists: bool) -> callable:
-    if lists:
-        if strategy == LadderStrategy.MAX_EARNINGS:
-            return get_compounding_earnings
-        elif strategy == LadderStrategy.MAX_YTM:
-            return get_annualized_earnings
-        elif strategy == LadderStrategy.MAX_RETURN:
-            return get_total_return
-        else:
-            raise ValueError(f"Unknown ladder strategy: {strategy}")
+def select_strategy_function(strategy: LadderStrategy) -> callable:
+    if strategy == LadderStrategy.MAX_EARNINGS:
+        return get_compounding_earnings
+    elif strategy == LadderStrategy.MAX_YTM_CAPITAL:
+        return get_annualized_earnings
+    elif strategy == LadderStrategy.MAX_RETURN:
+        return get_total_return
+    elif strategy == LadderStrategy.MAX_YTM:
+        return get_ytms
     else:
-        if strategy == LadderStrategy.MAX_EARNINGS:
-            return get_compounding_earning
-        elif strategy == LadderStrategy.MAX_YTM:
-            return get_annualized_earning
-        elif strategy == LadderStrategy.MAX_RETURN:
-            return get_return
-        else:
-            raise ValueError(f"Unknown ladder strategy: {strategy}")
+        raise ValueError(f"Unknown ladder strategy: {strategy}")
