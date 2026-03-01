@@ -59,6 +59,7 @@ def bond_dataframe():
                      'A', 'BBB', 'BB', 'BB+', 'AA', 'BBB'],
         'volumevalue': [1, 2, 3, 4, 0, 1, 2,
                         3, 4, 0, 1, 2, 3],
+        'taxation': [0.125] * 13
     }
 
     df = pd.DataFrame(bonds_data)
@@ -117,7 +118,8 @@ def bond_dataframe_simple():
                        1000],          # Year 2: I00001 has lot=1
         'ratingsp': ['A', 'BBB', 'A',  # Year 1
                      'BBB'],            # Year 2
-        'volumevalue': [1, 2, 3, 4]
+        'volumevalue': [1, 2, 3, 4],
+        'taxation': [0.125] * 4
     }
 
     df = pd.DataFrame(bonds_data)
@@ -758,7 +760,8 @@ def sample_bond_data():
         'minimumlot': [1000, 1000, 1000, 1000],
         'ncif': [1.1877, 1.2042, 1.1742, 1.2167],  # ISSUER_B has highest ncif
         'volumevalue': [1, 2, 3, 4],
-        'ratingsp': ['A', 'BBB', 'A', 'BBB']
+        'ratingsp': ['A', 'BBB', 'A', 'BBB'],
+        'taxation': [0.125, 0.125, 0.125, 0.125],
     }
     return pd.DataFrame(data)
 

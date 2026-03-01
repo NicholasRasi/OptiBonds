@@ -10,10 +10,11 @@ from optibonds.strategies import (
     select_strategy_function,
 )
 from optibonds.utils import (
-    get_compounding_earning,
     get_compounding_earnings,
-    get_annualized_earning,
     get_annualized_earnings,
+    get_ytms,
+    get_total_return,
+
 )
 
 
@@ -31,7 +32,8 @@ def sample_bond_data():
         'minimumlot': [1000, 1000, 1000, 1000],
         'ncif': [1.1877, 1.2042, 1.1742, 1.2167],  # ISSUER_B has highest ncif
         'volumevalue': [1, 2, 3, 4],
-        'ratingsp': ['BBB', 'A', 'BBB-', 'A+']
+        'ratingsp': ['BBB', 'A', 'BBB-', 'A+'],
+        'taxation': [0.125, 0.125, 0.125, 0.125]
     }
     return pd.DataFrame(data)
 
@@ -50,7 +52,8 @@ def sample_bond_data_2():
         'minimumlot': [1000, 1000, 1000],
         'ncif': [1.0869, 1.0927, 1.0835],
         'volumevalue': [1, 2, 3],
-        'ratingsp': ['BBB-', 'A-', 'BBB']
+        'ratingsp': ['BBB-', 'A-', 'BBB'],
+        'taxation': [0.125, 0.125, 0.125]
     }
     return pd.DataFrame(data)
 
@@ -69,7 +72,8 @@ def sample_bond_data_same_issuer():
         'minimumlot': [1000, 1000, 1000],
         'ncif': [1.1877, 1.2042, 1.1742],
         'volumevalue': [4, 3, 2],
-        'ratingsp': ['BBB', 'A', 'BBB-']
+        'ratingsp': ['BBB', 'A', 'BBB-'],
+        'taxation': [0.125, 0.125, 0.125]
     }
     return pd.DataFrame(data)
 
@@ -127,34 +131,35 @@ def ladder_conditions_diversification():
 class TestStrategyFunctionSelection:
     """Tests for strategy function selection"""
 
-    def test_select_strategy_function_max_earnings_single(self):
-        """Test selecting MAX_EARNINGS strategy for single bond"""
-        func = select_strategy_function(LadderStrategy.MAX_EARNINGS, lists=False)
-
-        assert func == get_compounding_earning
-
     def test_select_strategy_function_max_earnings_list(self):
         """Test selecting MAX_EARNINGS strategy for bond list"""
-        func = select_strategy_function(LadderStrategy.MAX_EARNINGS, lists=True)
+        func = select_strategy_function(LadderStrategy.MAX_EARNINGS)
 
         assert func == get_compounding_earnings
 
-    def test_select_strategy_function_max_ytm_single(self):
-        """Test selecting MAX_YTM strategy for single bond"""
-        func = select_strategy_function(LadderStrategy.MAX_YTM, lists=False)
-
-        assert func == get_annualized_earning
-
     def test_select_strategy_function_max_ytm_list(self):
-        """Test selecting MAX_YTM strategy for bond list"""
-        func = select_strategy_function(LadderStrategy.MAX_YTM, lists=True)
+        """Test selecting MAX_YTM_CAPITAL strategy for bond list"""
+        func = select_strategy_function(LadderStrategy.MAX_YTM_CAPITAL)
 
         assert func == get_annualized_earnings
+
+    def test_select_strategy_function_total_return(self):
+        """Test selecting MAX_RETURN strategy for bond list"""
+        func = select_strategy_function(LadderStrategy.MAX_RETURN)
+
+        assert func == get_total_return
+    
+    def test_select_strategy_function_ytms(self):
+        """Test selecting MAX_YTM strategy for bond list"""
+        func = select_strategy_function(LadderStrategy.MAX_YTM)
+
+        assert func == get_ytms
 
     def test_select_strategy_function_invalid(self):
         """Test selecting invalid strategy raises error"""
         with pytest.raises(ValueError):
-            select_strategy_function("INVALID_STRATEGY", lists=False)
+            select_strategy_function("INVALID_STRATEGY")
+    
 
 
 class TestGetBestBond:
@@ -225,7 +230,8 @@ class TestSelectBestLadder:
             current_coupon_rate=0.03,
             settlement_price=98.5,
             minimum_lot=1000,
-            ncif=1.1877
+            ncif=1.1877,
+            taxation=0.125
         )
         bond1_b = BondSimple(
             isin="B1",
@@ -236,7 +242,8 @@ class TestSelectBestLadder:
             current_coupon_rate=0.035,
             settlement_price=99.0,
             minimum_lot=1000,
-            ncif=1.2042
+            ncif=1.2042,
+            taxation=0.125
         )
 
         bond2_a = BondSimple(
@@ -248,7 +255,8 @@ class TestSelectBestLadder:
             current_coupon_rate=0.025,
             settlement_price=99.0,
             minimum_lot=1000,
-            ncif=1.0869
+            ncif=1.0869,
+            taxation=0.125
         )
         bond2_b = BondSimple(
             isin="B2",
@@ -259,7 +267,8 @@ class TestSelectBestLadder:
             current_coupon_rate=0.027,
             settlement_price=99.5,
             minimum_lot=1000,
-            ncif=1.0927
+            ncif=1.0927,
+            taxation=0.125
         )
 
         bonds = [[bond1_a, bond1_b], [bond2_a, bond2_b]]
@@ -299,7 +308,8 @@ class TestSelectBestLadder:
             current_coupon_rate=0.04,
             settlement_price=98.5,
             minimum_lot=1000,
-            ncif=1.22
+            ncif=1.22,
+            taxation=0.125
         )
         bond2_same = BondSimple(
             isin="A2",
@@ -310,7 +320,8 @@ class TestSelectBestLadder:
             current_coupon_rate=0.035,
             settlement_price=99.0,
             minimum_lot=1000,
-            ncif=1.11
+            ncif=1.11,
+            taxation=0.125
         )
         bond2_diff = BondSimple(
             isin="B2",
@@ -321,7 +332,8 @@ class TestSelectBestLadder:
             current_coupon_rate=0.03,
             settlement_price=99.0,
             minimum_lot=1000,
-            ncif=1.09
+            ncif=1.09,
+            taxation=0.125
         )
 
         bonds = [[bond1], [bond2_same, bond2_diff]]
@@ -356,7 +368,8 @@ class TestSelectBestLadder:
             current_coupon_rate=0.03,
             settlement_price=98.5,
             minimum_lot=1000,
-            ncif=1.1877
+            ncif=1.1877,
+            taxation=0.125
         )
         bond1_b = BondSimple(
             isin="B1",
@@ -367,7 +380,8 @@ class TestSelectBestLadder:
             current_coupon_rate=0.035,
             settlement_price=99.0,
             minimum_lot=1000,
-            ncif=1.2042
+            ncif=1.2042,
+            taxation=0.125
         )
 
         bond2_a = BondSimple(
@@ -379,7 +393,8 @@ class TestSelectBestLadder:
             current_coupon_rate=0.025,
             settlement_price=99.0,
             minimum_lot=1000,
-            ncif=1.0869
+            ncif=1.0869,
+            taxation=0.125
         )
         bond2_b = BondSimple(
             isin="B2",
@@ -390,7 +405,8 @@ class TestSelectBestLadder:
             current_coupon_rate=0.027,
             settlement_price=99.5,
             minimum_lot=1000,
-            ncif=1.0927
+            ncif=1.0927,
+            taxation=0.125
         )
 
         bonds = [[bond1_a, bond1_b], [bond2_a, bond2_b]]

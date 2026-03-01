@@ -47,10 +47,14 @@ def get_annualized_earnings(bonds: list[BondSimple]) -> float:
     total_annualized_earnings = sum(get_annualized_earning(bond) for bond in bonds)
     return total_annualized_earnings
 
-
-def allocate_capital_to_bond(
-        bond: BondSimple,
-        capital_invested: float) -> BondSimple:
+def get_total_return(bonds: list[BondSimple], net: bool = True) -> float:
+    total_return = 0.0
+    for bond in bonds:
+        bond_return = compute_bonds_coupons([bond]) + compute_bonds_capital_gain([bond])
+        if net:
+            bond_return = compute_net_value(bond_return, bond.taxation)
+        total_return += bond_return
+    return total_return
     # compute the max number of lots that can be purchased with the capital invested
     num_lots = math.floor(capital_invested / (bond.minimum_lot * bond.settlement_price / 100))
     capital = num_lots * bond.minimum_lot * bond.settlement_price / 100
@@ -113,45 +117,26 @@ def compute_approximated_bonds_yield(
         yield_weighted = weight * (bond.net_yield / 100)
     return yield_weighted
 
-
-def get_return(
-        bond: BondSimple) -> float:
-    total_return = compute_bond_coupons(bond) + compute_bond_capital_gain(bond)
-    return total_return
-
-
-def get_total_return(
-        bonds: list[BondSimple]) -> float:
-    total_return = sum(get_return(bond) for bond in bonds)
-    return total_return
-
-
-def compute_bonds_coupons(bonds: list[BondSimple]) -> float:
+def compute_bonds_coupons(bonds: list[BondSimple], net: bool = True) -> float:
     total_coupons = 0.0
     for bond in bonds:
-        total_coupons += compute_bond_coupons(bond)
+        nominal_value = bond.num_lots * bond.minimum_lot  # or bond.capital_invested / (bond.settlement_price / 100)
+        bond_coupons = nominal_value * bond.current_coupon_rate * bond.maturity_years
+        if net:
+            bond_coupons = compute_net_value(bond_coupons, bond.taxation)
+        total_coupons += bond_coupons
     return total_coupons
 
-
-def compute_bond_coupons(bond: BondSimple) -> float:
-    nominal_value = bond.num_lots * bond.minimum_lot  # or bond.capital_invested / (bond.settlement_price / 100)
-    total_coupons = nominal_value * bond.current_coupon_rate * bond.maturity_years
-    return total_coupons
-
-
-def compute_bonds_capital_gain(bonds: list[BondSimple]) -> float:
+def compute_bonds_capital_gain(bonds: list[BondSimple], net: bool = True) -> float:
     total_capital_gains = 0.0
     for bond in bonds:
-        total_capital_gains += compute_bond_capital_gain(bond)
+        nominal_value = bond.num_lots * bond.minimum_lot
+        # or bond.capital_invested / (bond.settlement_price / 100) - bond.capital_invested
+        bond_capital_gain = nominal_value - bond.capital_invested
+        if net:
+            bond_capital_gain = compute_net_value(bond_capital_gain, bond.taxation)
+        total_capital_gains += bond_capital_gain
     return total_capital_gains
-
-
-def compute_bond_capital_gain(bond: BondSimple) -> float:
-    nominal_value = bond.num_lots * bond.minimum_lot
-    # or bond.capital_invested / (bond.settlement_price / 100) - bond.capital_invested
-    capital_gain = nominal_value - bond.capital_invested
-    return capital_gain
-
 
 def compute_total_gain_yield(
         total_coupons: float,

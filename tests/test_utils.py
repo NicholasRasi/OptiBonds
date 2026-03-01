@@ -7,14 +7,10 @@ from optibonds.utils import (
     allocate_capital_to_bond,
     allocate_capital_to_bonds,
     compute_permutations_bonds,
-    get_annualized_earning,
     get_annualized_earnings,
-    get_compounding_earning,
     get_compounding_earnings,
     compute_mean_weighted_maturity,
-    compute_bond_coupons,
     compute_bonds_coupons,
-    compute_bond_capital_gain,
     compute_bonds_capital_gain,
     compute_total_gain_yield,
     compute_total_simple_yield,
@@ -34,7 +30,8 @@ def sample_bond():
         current_coupon_rate=0.03,
         settlement_price=98.5,
         minimum_lot=1000,
-        ncif=1.1877  # (1.035)^5
+        ncif=1.1877,  # (1.035)^5
+        taxation=0.125
     )
 
 
@@ -50,7 +47,8 @@ def sample_bond_2():
         current_coupon_rate=0.025,
         settlement_price=99.0,
         minimum_lot=1000,
-        ncif=1.0869  # (1.028)^3
+        ncif=1.0869,  # (1.028)^3
+        taxation=0.125
     )
 
 
@@ -109,7 +107,7 @@ class TestEarningsCalculations:
         """Test compounding earning calculation for a single bond"""
         sample_bond.capital_invested = 10000.0
 
-        earning = get_compounding_earning(sample_bond)
+        earning = get_compounding_earnings([sample_bond])
 
         # Should be capital * ncif
         expected = 10000.0 * sample_bond.ncif
@@ -130,7 +128,7 @@ class TestEarningsCalculations:
         """Test annualized earning calculation"""
         sample_bond.capital_invested = 10000.0
 
-        earning = get_annualized_earning(sample_bond)
+        earning = get_annualized_earnings([sample_bond])
 
         # Should be capital * (net_yield / 100)
         expected = 10000.0 * (sample_bond.net_yield / 100)
@@ -163,7 +161,8 @@ class TestPermutations:
             current_coupon_rate=0.03,
             settlement_price=100,
             minimum_lot=1000,
-            ncif=1.03
+            ncif=1.03,
+            taxation=0.125
         )
         bond_a2 = BondSimple(
             isin="A2",
@@ -174,7 +173,8 @@ class TestPermutations:
             current_coupon_rate=0.03,
             settlement_price=100,
             minimum_lot=1000,
-            ncif=1.03
+            ncif=1.03,
+            taxation=0.125
         )
         bond_b1 = BondSimple(
             isin="B1",
@@ -185,7 +185,8 @@ class TestPermutations:
             current_coupon_rate=0.04,
             settlement_price=100,
             minimum_lot=1000,
-            ncif=1.08
+            ncif=1.08,
+            taxation=0.125
         )
         bond_b2 = BondSimple(
             isin="B2",
@@ -196,7 +197,8 @@ class TestPermutations:
             current_coupon_rate=0.04,
             settlement_price=100,
             minimum_lot=1000,
-            ncif=1.08
+            ncif=1.08,
+            taxation=0.125
         )
 
         matrix = [[bond_a1, bond_a2], [bond_b1, bond_b2]]
@@ -225,7 +227,8 @@ class TestPermutations:
             current_coupon_rate=0.03,
             settlement_price=100,
             minimum_lot=1000,
-            ncif=1.03
+            ncif=1.03,
+            taxation=0.125
         )
         bond2 = BondSimple(
             isin="A2",
@@ -236,7 +239,8 @@ class TestPermutations:
             current_coupon_rate=0.03,
             settlement_price=100,
             minimum_lot=1000,
-            ncif=1.06
+            ncif=1.06,
+            taxation=0.125
         )
         bond3 = BondSimple(
             isin="A3",
@@ -247,7 +251,8 @@ class TestPermutations:
             current_coupon_rate=0.03,
             settlement_price=100,
             minimum_lot=1000,
-            ncif=1.09
+            ncif=1.09,
+            taxation=0.125
         )
 
         matrix = [[bond1], [bond2], [bond3]]
@@ -298,7 +303,7 @@ class TestCouponCalculations:
         """Test coupon calculation for a single bond"""
         sample_bond.num_lots = 10
 
-        coupons = compute_bond_coupons(sample_bond)
+        coupons = compute_bonds_coupons([sample_bond], net=False)
 
         # coupons = num_lots * minimum_lot * coupon_rate * maturity_years
         expected = sample_bond.num_lots * sample_bond.minimum_lot * sample_bond.current_coupon_rate * sample_bond.maturity_years
@@ -310,7 +315,7 @@ class TestCouponCalculations:
         sample_bond_2.num_lots = 15
 
         bonds = [sample_bond, sample_bond_2]
-        total_coupons = compute_bonds_coupons(bonds)
+        total_coupons = compute_bonds_coupons(bonds, net=False)
 
         expected = (
             (sample_bond.num_lots * sample_bond.minimum_lot * sample_bond.current_coupon_rate * sample_bond.maturity_years) +
@@ -328,7 +333,7 @@ class TestCapitalGainCalculations:
         sample_bond.num_lots = 10
         sample_bond.capital_invested = 9850.0  # 10 lots * 1000 * 98.5%
 
-        capital_gain = compute_bond_capital_gain(sample_bond)
+        capital_gain = compute_bonds_capital_gain([sample_bond], net=False)
 
         # nominal = 10 * 1000 = 10000
         # capital_gain = 10000 - 9850 = 150
@@ -343,7 +348,7 @@ class TestCapitalGainCalculations:
         sample_bond_2.capital_invested = 14850.0
 
         bonds = [sample_bond, sample_bond_2]
-        total_gain = compute_bonds_capital_gain(bonds)
+        total_gain = compute_bonds_capital_gain(bonds, net=False)
 
         expected = (10000 - 9850) + (15000 - 14850)
         assert abs(total_gain - expected) < 0.01
@@ -388,7 +393,7 @@ class TestTaxCalculations:
         """Test net value calculation with tax"""
         gross_value = 1000.0
 
-        net_value = compute_net_value(gross_value)
+        net_value = compute_net_value(gross_value, 0.125)
 
         # Tax rate is 12.5%, so net = 1000 * 0.875 = 875
         expected = 1000.0 * 0.875

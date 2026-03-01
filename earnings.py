@@ -42,6 +42,7 @@ def main():
             settlement_price=bond_row.settlementprice,
             minimum_lot=bond_row.minimumlot,
             ncif=bond_row.ncif,
+            taxation=bond_row.taxation,
             rating=bond_row.ratingsp,
             volume_rating=bond_row.volumevalue
         )

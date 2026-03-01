@@ -45,4 +45,10 @@ def load_dataset(filepath: str) -> pd.DataFrame:
     df["ncif"] = (
         (1 + df["netyieldtomaturity"]/100) ** (df["maturityyears"])
     )
+
+    # Calculate the taxation column
+    # if it is a governative bond, taxation is 0.125, otherwise 0.26
+    df["taxation"] = df["issuercode"].apply(
+        lambda x: 0.125 if x.startswith("GOV") or x.startswith("SOV") else 0.26
+    )
     return df

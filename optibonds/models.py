@@ -16,6 +16,7 @@ class BondSimple:
             settlement_price: float,
             minimum_lot: int,
             ncif: float, # net compounded interest factor = (1 + net_yield)**maturity_years
+            taxation: float,
             volume_rating: int = 0,
             rating: str = ""
     ):
@@ -28,6 +29,7 @@ class BondSimple:
         self.settlement_price: float = settlement_price
         self.minimum_lot: int = minimum_lot
         self.ncif: float = ncif
+        self.taxation: float = taxation
         self.volume_rating: int = volume_rating
         self.rating: str = rating
         self.capital_invested: float = 0.0

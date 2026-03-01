@@ -18,7 +18,8 @@ def simple_bond():
         current_coupon_rate=0.03,
         settlement_price=100.0,
         minimum_lot=1000,
-        ncif=1.0927
+        ncif=1.0927,
+        taxation=0.125,
     )
 
 
@@ -34,7 +35,8 @@ def bond_dataframe():
         'currentcouponrate': [0.025, 0.030, 0.035],
         'settlementprice': [100.0, 99.5, 98.0],
         'minimumlot': [1000, 1000, 1000],
-        'ncif': [1.051, 1.093, 1.148]
+        'ncif': [1.051, 1.093, 1.148],
+        'taxation': [0.125, 0.125, 0.125],
     }
     return pd.DataFrame(data)
 
