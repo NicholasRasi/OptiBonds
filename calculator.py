@@ -13,6 +13,8 @@ def main():
     parser.add_argument('--config', '-c', type=str, default='conditions.yml',
                         help='Path to the configuration YAML file')
     parser.add_argument('--save', '-s', type=str, help='Path to save the generated portfolio YAML')
+    # check if --cashflows is set, if so, print the cash flows, default is False
+    parser.add_argument('--cashflows', '-f', action='store_true', help='Print the cash flows of the generated portfolio')
     args = parser.parse_args()
 
     try:
@@ -67,7 +69,8 @@ def main():
         execution_time=execution_time
     )
 
-    # print_portfolio_cash_flows(bonds)
+    if args.cashflows:
+        print_portfolio_cash_flows(bonds)
 
     if args.save:
         portfolio_data = {
