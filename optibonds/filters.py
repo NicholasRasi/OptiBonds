@@ -35,7 +35,7 @@ def get_eligible_bonds(df: pd.DataFrame, ladder_conditions: LadderConditions, st
         if ladder_conditions.exclude_isins:
             filter_mask &= ~df.index.isin(ladder_conditions.exclude_isins)
         if ladder_conditions.max_last_price:
-            filter_mask &= (df['settlementprice'] <= ladder_conditions.max_last_price)
+            filter_mask &= (df['price'] <= ladder_conditions.max_last_price)
         if ladder_conditions.min_coupon_rate:
             filter_mask &= (df['currentcouponrate'] >= ladder_conditions.min_coupon_rate)
         if ladder_conditions.min_volume_rating:

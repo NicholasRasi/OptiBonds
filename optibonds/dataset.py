@@ -43,7 +43,7 @@ def load_dataset(filepath: str) -> pd.DataFrame:
 
     # Calculate compound interest factor
     df["ncif"] = (
-        (1 + df["netyieldtomaturity"]/100) ** (df["maturityyears"])
+        (1 + df["netytm"]/100) ** (df["maturityyears"])
     )
 
     # Calculate the taxation column

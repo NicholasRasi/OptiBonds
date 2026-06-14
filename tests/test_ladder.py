@@ -45,14 +45,14 @@ def bond_dataframe():
             redemption_2yr, redemption_2yr, redemption_2yr, redemption_2yr, redemption_2yr, redemption_2yr
         ],
         'referencedate': [reference_date] * 13,
-        'netyieldtomaturity': [3.0, 4.5, 2.0, 3.5, 1.0, 2.5, 3.2,   # Year 1
-                               2.5, 3.5, 5.5, 4.5, 2.0, 8.0],      # Year 2
-        'grossyieldtomaturity': [3.5, 5.0, 2.5, 4.0, 1.5, 3.0, 3.7,
-                                 3.0, 4.0, 6.0, 5.0, 2.5, 4.5],
+        'netytm': [3.0, 4.5, 2.0, 3.5, 1.0, 2.5, 3.2,   # Year 1
+                   2.5, 3.5, 5.5, 4.5, 2.0, 8.0],      # Year 2
+        'grossytm': [3.5, 5.0, 2.5, 4.0, 1.5, 3.0, 3.7,
+                     3.0, 4.0, 6.0, 5.0, 2.5, 4.5],
         'currentcouponrate': [0.03, 0.04, 0.02, 0.035, 0.01, 0.025, 0.032,
                               0.025, 0.035, 0.05, 0.045, 0.02, 0.04],
-        'settlementprice': [102.5, 95.0, 88.0, 103.0, 97.5, 91.0, 105.0,  # Year 1: varied 88-105
-                            89.0, 96.5, 92.0, 87.0, 104.0, 93.5],   # Year 2: varied 87-104
+        'price': [102.5, 95.0, 88.0, 103.0, 97.5, 91.0, 105.0,  # Year 1: varied 88-105
+                  89.0, 96.5, 92.0, 87.0, 104.0, 93.5],   # Year 2: varied 87-104
         'minimumlot': [1000, 1000, 1, 1000, 1000, 1, 1000,  # Year 1: C00001 and C00002 have lot=1
                        1000, 1000, 1000, 1, 1000, 1000],     # Year 2: I00001 has lot=1
         'ratingsp': ['A', 'BBB', 'AA', 'A', 'AAA', 'AA', 'A',
@@ -73,7 +73,7 @@ def bond_dataframe():
     )
 
     # Calculate NCIF (Net Compound Interest Factor)
-    df['ncif'] = (1 + df['netyieldtomaturity']/100) ** df['maturityyears']
+    df['ncif'] = (1 + df['netytm']/100) ** df['maturityyears']
 
     return df
 
@@ -106,14 +106,14 @@ def bond_dataframe_simple():
             redemption_2yr
         ],
         'referencedate': [reference_date] * 4,
-        'netyieldtomaturity': [3.0, 4.5, 3.5,    # Year 1
-                               3.5],            # Year 2
-        'grossyieldtomaturity': [3.5, 5.0, 4.0,  # Year 1
-                                 4.0],          # Year 2
+        'netytm': [3.0, 4.5, 3.5,    # Year 1
+                   3.5],            # Year 2
+        'grossytm': [3.5, 5.0, 4.0,  # Year 1
+                     4.0],          # Year 2
         'currentcouponrate': [0.03, 0.04, 0.035,  # Year 1
                               0.035],           # Year 2
-        'settlementprice': [102.5, 95.0, 103.0,  # Year 1
-                            96.5],              # Year 2
+        'price': [102.5, 95.0, 103.0,  # Year 1
+                  96.5],              # Year 2
         'minimumlot': [1000, 1000, 1000,  # Year 1: C00001 and C00002 have lot=1
                        1000],          # Year 2: I00001 has lot=1
         'ratingsp': ['A', 'BBB', 'A',  # Year 1
@@ -133,7 +133,7 @@ def bond_dataframe_simple():
     )
 
     # Calculate NCIF (Net Compound Interest Factor)
-    df['ncif'] = (1 + df['netyieldtomaturity']/100) ** df['maturityyears']
+    df['ncif'] = (1 + df['netytm']/100) ** df['maturityyears']
 
     return df
 
@@ -753,10 +753,10 @@ def sample_bond_data():
         'isincode': ['IT0001234567', 'IT0001234568', 'IT0001234569', 'IT0001234570'],
         'issuercode': ['ISSUER_A', 'ISSUER_B', 'ISSUER_C', 'ISSUER_D'],
         'maturityyears': [5.0, 5.1, 4.9, 5.0],
-        'netyieldtomaturity': [3.5, 3.8, 3.3, 4.0],  # ISSUER_D has highest net yield
-        'grossyieldtomaturity': [4.0, 4.3, 3.8, 4.5],
+        'netytm': [3.5, 3.8, 3.3, 4.0],  # ISSUER_D has highest net yield
+        'grossytm': [4.0, 4.3, 3.8, 4.5],
         'currentcouponrate': [0.03, 0.035, 0.028, 0.04],
-        'settlementprice': [98.5, 99.0, 97.5, 98.0],
+        'price': [98.5, 99.0, 97.5, 98.0],
         'minimumlot': [1000, 1000, 1000, 1000],
         'ncif': [1.1877, 1.2042, 1.1742, 1.2167],  # ISSUER_B has highest ncif
         'volumevalue': [1, 2, 3, 4],

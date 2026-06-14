@@ -25,10 +25,10 @@ def sample_bond_data():
         'isincode': ['IT0001234567', 'IT0001234568', 'IT0001234569', 'IT0001234570'],
         'issuercode': ['ISSUER_A', 'ISSUER_B', 'ISSUER_C', 'ISSUER_D'],
         'maturityyears': [5.0, 5.1, 4.9, 5.0],
-        'netyieldtomaturity': [3.5, 3.8, 3.3, 4.0],  # ISSUER_D has highest net yield
-        'grossyieldtomaturity': [4.0, 4.3, 3.8, 4.5],
+        'netytm': [3.5, 3.8, 3.3, 4.0],  # ISSUER_D has highest net yield
+        'grossytm': [4.0, 4.3, 3.8, 4.5],
         'currentcouponrate': [0.03, 0.035, 0.028, 0.04],
-        'settlementprice': [98.5, 99.0, 97.5, 98.0],
+        'price': [98.5, 99.0, 97.5, 98.0],
         'minimumlot': [1000, 1000, 1000, 1000],
         'ncif': [1.1877, 1.2042, 1.1742, 1.2167],  # ISSUER_B has highest ncif
         'volumevalue': [1, 2, 3, 4],
@@ -45,10 +45,10 @@ def sample_bond_data_2():
         'isincode': ['IT0009876543', 'IT0009876544', 'IT0009876545'],
         'issuercode': ['ISSUER_D', 'ISSUER_E', 'ISSUER_F'],
         'maturityyears': [3.0, 3.1, 2.9],
-        'netyieldtomaturity': [2.8, 3.0, 2.7],
-        'grossyieldtomaturity': [3.2, 3.4, 3.1],
+        'netytm': [2.8, 3.0, 2.7],
+        'grossytm': [3.2, 3.4, 3.1],
         'currentcouponrate': [0.025, 0.027, 0.024],
-        'settlementprice': [99.0, 99.5, 98.0],
+        'price': [99.0, 99.5, 98.0],
         'minimumlot': [1000, 1000, 1000],
         'ncif': [1.0869, 1.0927, 1.0835],
         'volumevalue': [1, 2, 3],
@@ -65,10 +65,10 @@ def sample_bond_data_same_issuer():
         'isincode': ['IT0001111111', 'IT0001111112', 'IT0001111113'],
         'issuercode': ['ISSUER_A', 'ISSUER_A', 'ISSUER_A'],
         'maturityyears': [5.0, 5.1, 4.9],
-        'netyieldtomaturity': [3.5, 3.8, 3.3],
-        'grossyieldtomaturity': [4.0, 4.3, 3.8],
+        'netytm': [3.5, 3.8, 3.3],
+        'grossytm': [4.0, 4.3, 3.8],
         'currentcouponrate': [0.03, 0.035, 0.028],
-        'settlementprice': [98.5, 99.0, 97.5],
+        'price': [98.5, 99.0, 97.5],
         'minimumlot': [1000, 1000, 1000],
         'ncif': [1.1877, 1.2042, 1.1742],
         'volumevalue': [4, 3, 2],
@@ -148,7 +148,7 @@ class TestStrategyFunctionSelection:
         func = select_strategy_function(LadderStrategy.MAX_RETURN)
 
         assert func == get_total_return
-    
+
     def test_select_strategy_function_ytms(self):
         """Test selecting MAX_YTM strategy for bond list"""
         func = select_strategy_function(LadderStrategy.MAX_YTM)
@@ -159,7 +159,6 @@ class TestStrategyFunctionSelection:
         """Test selecting invalid strategy raises error"""
         with pytest.raises(ValueError):
             select_strategy_function("INVALID_STRATEGY")
-    
 
 
 class TestGetBestBond:

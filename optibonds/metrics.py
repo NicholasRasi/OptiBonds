@@ -389,10 +389,10 @@ def print_bond_vertical(bond_df):
     df = bond_df.copy()
 
     df['redemptiondate'] = df['redemptiondate'].date()
-    df['grossyieldtomaturity'] = df['grossyieldtomaturity']
-    df['netyieldtomaturity'] = df['netyieldtomaturity']
+    df['grossytm'] = df['grossytm']
+    df['netytm'] = df['netytm']
     df['currentcouponrate'] = df['currentcouponrate'] * 100
-    df['settlementprice'] = df['settlementprice'].round(2)
+    df['price'] = df['price'].round(2)
     df['maturityyears'] = df['maturityyears'].round(2)
     df['ncif'] = df['ncif'].round(2)
 
@@ -406,10 +406,10 @@ def print_bond_vertical(bond_df):
         'ratingsp': 'S&P Rating',
         'ratingmoodys': "Moody's Rating",
         'ratingfitch': 'Fitch Rating',
-        'grossyieldtomaturity': 'YTM Gross (%)',
-        'netyieldtomaturity': 'YTM Net (%)',
+        'grossytm': 'YTM Gross (%)',
+        'netytm': 'YTM Net (%)',
         'currentcouponrate': 'Coupon (%)',
-        'settlementprice': 'Price',
+        'price': 'Price',
         'minimumlot': 'Minimum Lot',
         'currencycode': 'Currency',
         'ncif': 'NCIF'
