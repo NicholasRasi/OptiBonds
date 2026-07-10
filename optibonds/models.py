@@ -42,6 +42,7 @@ class LadderStrategy(Enum):
     MAX_YTM = "max_ytm"
     MAX_YTM_CAPITAL = "max_ytm_capital"
     MAX_RETURN = "max_return"
+    ALL = "all"
 
 class LadderConditions:
     def __init__(self,

@@ -1,5 +1,5 @@
 from tabulate import tabulate
-from optibonds.models import BondSimple, LadderConditions
+from optibonds.models import BondSimple, LadderConditions, LadderStrategy
 from optibonds.utils import (
     compute_bonds_capital_gain,
     compute_bonds_coupons,
@@ -343,7 +343,23 @@ def print_portfolio_report(
     # =========================
     # TOTAL RETURNS
     # =========================
-    section("TOTAL RETURNS")
+    print_total_returns(bonds)
+
+
+def print_total_returns(bonds: list[BondSimple], title: str = "TOTAL RETURNS"):
+    section(title)
+
+    if not bonds:
+        print("No bonds selected.")
+        return
+
+    capital_invested = sum(bond.capital_invested for bond in bonds)
+    mean_weighted_duration = compute_mean_weighted_maturity(bonds, capital_invested)
+
+    total_coupons_gross = compute_bonds_coupons(bonds, net=False)
+    total_coupons_net = compute_bonds_coupons(bonds, net=True)
+    total_capital_gains_gross = compute_bonds_capital_gain(bonds, net=False)
+    total_capital_gains_net = compute_bonds_capital_gain(bonds, net=True)
 
     gross_total_return = total_coupons_gross + total_capital_gains_gross
     net_total_return = total_coupons_net + total_capital_gains_net
@@ -383,6 +399,13 @@ def print_portfolio_report(
         headers=["Metric", "Gross", "Net"],
         tablefmt="github",
     ))
+
+
+def print_strategies_comparison(results: dict[LadderStrategy, list[BondSimple]]):
+    section("STRATEGIES COMPARISON")
+
+    for strategy, bonds in results.items():
+        print_total_returns(bonds, title=f"TOTAL RETURNS - {strategy.value}")
 
 
 def print_bond_vertical(bond_df):

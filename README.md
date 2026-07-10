@@ -117,6 +117,14 @@ This strategy focuses on **Yield to Maturity (YTM)**. It identifies bonds offeri
 > $Y$
 
 
+### 5. All (Comparison)
+`LadderStrategy.ALL`
+
+This option runs **every strategy above** over the same eligible bonds. Each strategy's **Total Returns** table is printed, so you can pick the strategy that best fits your goals. To print the full report, update the strategy in `conditions.yml` and run the script again.
+
+> Set `strategy: "all"` in `conditions.yml`. The `--save` flag is ignored in this mode.
+
+
 ## Diversification
 
 Diversification is the cornerstone of a safe bond ladder. OptiBonds helps spread risk across different issuers, currencies, and maturity profiles.
@@ -200,7 +208,7 @@ ladder_size: 10
 step_size: 1
 capital_invested: 5000
 min_rating: "A"
-strategy: "max_earnings"
+strategy: "max_earnings" # max_earnings, max_ytm, max_ytm_capital, max_return, all
 # ... other settings
 ```
 Change these values to match your investment plan.

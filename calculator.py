@@ -2,8 +2,8 @@ import pandas as pd
 import argparse
 from time import perf_counter
 from optibonds.dataset import load_dataset
-from optibonds.metrics import print_bond_vertical, print_dataset_data, print_portfolio_report, print_ladder_conditions, print_portfolio_cash_flows
-from optibonds.models import BondSimple, LadderConditions
+from optibonds.metrics import print_bond_vertical, print_dataset_data, print_portfolio_report, print_ladder_conditions, print_portfolio_cash_flows, print_strategies_comparison
+from optibonds.models import BondSimple, LadderConditions, LadderStrategy
 from optibonds.strategies import build_ladder
 from optibonds.filters import get_eligible_bonds
 
@@ -42,6 +42,20 @@ def main():
         return
 
     diversification = ladder_conditions.step_width > 1 or ladder_conditions.max_duplicated_issuers is not None
+
+    if ladder_conditions.strategy == LadderStrategy.ALL:
+        results: dict[LadderStrategy, list[BondSimple]] = {}
+        for strategy in LadderStrategy:
+            if strategy == LadderStrategy.ALL:
+                continue
+            print(f"\nBuilding ladder for strategy: {strategy.value}")
+            ladder_conditions.strategy = strategy
+            strategy_ladder = build_ladder(eligible_bonds, ladder_conditions, diversification)
+            results[strategy] = [bond for bonds in strategy_ladder for bond in bonds]
+
+        print_strategies_comparison(results)
+        return
+
     ladder = build_ladder(eligible_bonds, ladder_conditions, diversification)
 
     t_end = perf_counter()
